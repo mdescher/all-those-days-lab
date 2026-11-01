@@ -1,0 +1,294 @@
+{
+  "levels": [
+    {
+      "id": "light",
+      "title": "Lichter",
+      "map": [
+        "#######",
+        "#######",
+        "#######",
+        "#1.*.E#",
+        "#######",
+        "#######",
+        "#######",
+        "#######",
+        "#######",
+        "#######"
+      ],
+      "best": 4,
+      "text": "Tippe ein Feld in der Zeile oder Spalte des Geistes: Er läuft dorthin, Schritt für Schritt. Er betritt nie ein Feld, auf dem er schon war. Jedes Licht, das er betritt, schaltet um. Ob es brennt, siehst du erst am Ende, wenn alle Geister ihre Wege noch einmal gehen. Sind mehrere Geister da, tippst du zuerst einen an; tippst du ihn vor dem ersten Schritt noch einmal an, wartet er wieder.",
+      "solution": [
+        {
+          "ghost": 0,
+          "moves": "RRRR"
+        }
+      ]
+    },
+    {
+      "id": "twice",
+      "title": "Zweimal ist aus",
+      "map": [
+        "#######",
+        "#######",
+        "#######",
+        "###2###",
+        "#1.*.E#",
+        "#.#.###",
+        "#E#E###",
+        "#######",
+        "#######",
+        "#######"
+      ],
+      "best": 5,
+      "text": "Ein Licht schaltet bei jedem Geist um: An, aus, wieder an. Gelöst ist der Raum, wenn alle Geister draußen sind und alle Lichter brennen. Jeder Ausgang trägt nur einen Geist. Wer losgegangen ist, muss hinaus, bevor der nächste dran ist; der letzte wird von selbst gewählt.",
+      "wrong": [
+        {
+          "ghost": 0,
+          "moves": "RRRR"
+        },
+        {
+          "ghost": 1,
+          "moves": "DDD"
+        }
+      ],
+      "solution": [
+        {
+          "ghost": 0,
+          "moves": "DD"
+        },
+        {
+          "ghost": 1,
+          "moves": "DRR"
+        }
+      ]
+    },
+    {
+      "id": "door",
+      "title": "Schalter und Tür",
+      "map": [
+        "#######",
+        "#######",
+        "#######",
+        "#a..###",
+        "#*#1###",
+        "#...A.E",
+        "#######",
+        "#######",
+        "#######",
+        "#######"
+      ],
+      "best": 10,
+      "text": "Ein Schalter öffnet die Tür seiner Farbe für immer. Türen derselben Farbe gehen zusammen auf.",
+      "wrong": [
+        {
+          "ghost": 0,
+          "moves": "DLLUURR"
+        }
+      ],
+      "solution": [
+        {
+          "ghost": 0,
+          "moves": "ULLDDRRRRR"
+        }
+      ]
+    },
+    {
+      "id": "plate",
+      "title": "Druckplatten",
+      "map": [
+        "#######",
+        "#######",
+        "#######",
+        "#1m.E##",
+        "#######",
+        "#2.A*E#",
+        "#######",
+        "#######",
+        "#######",
+        "#######"
+      ],
+      "best": 7,
+      "text": "Eine Druckplatte öffnet ihre Tür, wenn sie zu ist, und schließt sie, wenn sie offen ist. Jeder Schritt auf die Platte zählt.",
+      "solution": [
+        {
+          "ghost": 0,
+          "moves": "RRR"
+        },
+        {
+          "ghost": 1,
+          "moves": "RRRR"
+        }
+      ]
+    },
+    {
+      "id": "colour",
+      "title": "Farbige Lichter",
+      "map": [
+        "#######",
+        "#######",
+        "#######",
+        "#1.w.E#",
+        "###.###",
+        "#2.x.E#",
+        "#######",
+        "#######",
+        "#######",
+        "#######"
+      ],
+      "best": 8,
+      "text": "Ein farbiges Licht schaltet nur für den Geist seiner Farbe. Jeder andere Geist löscht es.",
+      "wrong": [
+        {
+          "ghost": 0,
+          "moves": "RRDDRR"
+        },
+        {
+          "ghost": 1,
+          "moves": "RRUURR"
+        }
+      ],
+      "solution": [
+        {
+          "ghost": 0,
+          "moves": "RRRR"
+        },
+        {
+          "ghost": 1,
+          "moves": "RRRR"
+        }
+      ]
+    },
+    {
+      "id": "oneway",
+      "title": "Einbahnfelder",
+      "map": [
+        "#######",
+        "#######",
+        "#######",
+        "#.*.###",
+        "#v#^###",
+        "E.1.###",
+        "#######",
+        "#######",
+        "#######",
+        "#######"
+      ],
+      "best": 8,
+      "text": "Ein Einbahnfeld darfst du von jeder Seite betreten, verlassen aber nur in Pfeilrichtung. Wer es gegen den Pfeil betritt, steckt fest.",
+      "wrong": [
+        {
+          "ghost": 0,
+          "moves": "LU"
+        }
+      ],
+      "solution": [
+        {
+          "ghost": 0,
+          "moves": "RUULLDDL"
+        }
+      ]
+    },
+    {
+      "id": "teleport",
+      "title": "Teleporter",
+      "map": [
+        "#######",
+        "#######",
+        "#######",
+        "#1.q###",
+        "#######",
+        "#######",
+        "###q*E#",
+        "#######",
+        "#######",
+        "#######"
+      ],
+      "best": 4,
+      "text": "Wer ein Ende eines Teleporters betritt, steht im selben Schritt am anderen. Beide Enden gehören dann zu seiner Spur: Jeder Geist nutzt ein Paar nur einmal.",
+      "solution": [
+        {
+          "ghost": 0,
+          "moves": "RRRR"
+        }
+      ]
+    },
+    {
+      "id": "block",
+      "title": "Blöcke",
+      "map": [
+        "#######",
+        "#######",
+        "#######",
+        "###.###",
+        "#..$*E#",
+        "###1###",
+        "#######",
+        "#######",
+        "#######",
+        "#######"
+      ],
+      "best": 3,
+      "text": "Ein Block hält den Geist auf wie eine Wand. Tippst du ihn an, schiebt der Geist ihn ein Feld weiter und rückt nach. Blöcke gleiten nur auf leeren Boden, nicht auf Lichter, Türen, Ausgänge oder andere Blöcke, und bleiben, wo sie hingeschoben wurden.",
+      "solution": [
+        {
+          "ghost": 0,
+          "moves": "URR"
+        }
+      ]
+    },
+    {
+      "id": "hole",
+      "title": "Löcher",
+      "map": [
+        "#######",
+        "#######",
+        "#######",
+        "#1$O*E#",
+        "#######",
+        "#######",
+        "#######",
+        "#######",
+        "#######",
+        "#######"
+      ],
+      "best": 4,
+      "text": "Ein Loch hält den Geist auf wie eine Wand. Ein Block, der hineingeschoben wird, füllt es; danach ist es Boden.",
+      "solution": [
+        {
+          "ghost": 0,
+          "moves": "RRRR"
+        }
+      ]
+    },
+    {
+      "id": "forget",
+      "title": "Vergessen",
+      "map": [
+        "#######",
+        "#######",
+        "#######",
+        "##.*###",
+        "#1.f###",
+        "##.####",
+        "##E####",
+        "#######",
+        "#######",
+        "#######"
+      ],
+      "best": 7,
+      "text": "Ein Vergessen-Feld löscht die Spur des Geistes: Danach darf er wieder auf Felder, auf denen er schon war, nur nicht auf dasselbe Vergessen-Feld.",
+      "wrong": [
+        {
+          "ghost": 0,
+          "moves": "RDD"
+        }
+      ],
+      "solution": [
+        {
+          "ghost": 0,
+          "moves": "RURDLDD"
+        }
+      ]
+    }
+  ]
+}
