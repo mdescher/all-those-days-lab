@@ -76,8 +76,17 @@
   .room .item { grid-template-columns: 1fr auto; padding-right: 0; }
   .room-id { font-weight: 800; font-size: 17px; }
   .solved .room-id::after { content: " ✓"; color: var(--ok); }
-  .star { background: none; padding: 8px; color: var(--muted); font-size: 22px; line-height: 1; }
-  .star[aria-pressed=true] { color: var(--gold); }
+  .star { background: none; padding: 8px 4px; color: var(--muted); font-size: 13px; letter-spacing: 1px; line-height: 1; opacity: 0.6; white-space: nowrap; }
+  .star.rated { color: var(--gold); opacity: 1; }
+  .stars-wrap { display: grid; gap: 4px; justify-items: center; }
+  .stars { display: flex; justify-content: center; gap: 4px; }
+  .stars button { background: none; padding: 4px 6px; font-size: 34px; line-height: 1; color: var(--muted); }
+  .stars button[aria-pressed=true] { color: var(--gold); }
+  .stars-hint { text-align: center; margin: 0; }
+  #rate-dialog { border-radius: 18px; padding: 22px; width: min(340px, calc(100% - 32px)); box-sizing: border-box; background: var(--card); border: 1.5px solid rgba(185,166,255,0.5); color: var(--ink); text-align: center; }
+  #rate-dialog::backdrop { background: rgba(0,0,0,0.6); }
+  #rate-dialog h2 { margin: 0 0 4px; }
+  #rate-dialog .row { justify-content: center; margin-top: 14px; }
 
   /* Play */
   #view-room { height: 100%; box-sizing: border-box; padding-block: 8px 12px; grid-template-rows: auto auto 1fr auto; gap: 8px; }
@@ -158,6 +167,12 @@
       <div class="guide-links" id="chapter-guide"></div>
     </div>
     <ul class="list" id="room-list"></ul>
+    <dialog id="rate-dialog">
+      <h2 id="rate-title"></h2>
+      <p class="small muted" id="rate-status"></p>
+      <div class="stars-wrap" id="rate-stars"></div>
+      <div class="row"><button type="button" id="rate-done">Fertig</button></div>
+    </dialog>
   </section>
 
   <section class="view" id="view-room" hidden>
@@ -182,7 +197,7 @@
     <div class="hero">
       <span class="eyebrow">Anleitung</span>
       <h2>So spielt man All Those Days</h2>
-      <p class="muted">Führe die Geister nacheinander zu den Ausgängen. Jedes Licht, das ein Geist betritt, schaltet um, aber du siehst nicht, ob es brennt. Erst am Ende gehen alle ihre Wege noch einmal, und die Lichter zeigen sich. Jeder Raum hat eine kürzeste Lösung, den Bestwert; wer ihn trifft, bekommt drei Monde. Für das Testlabor zählt aber nur, dass du überhaupt eine Lösung findest.</p>
+      <p class="muted">Führe die Geister nacheinander zu den Ausgängen. Jedes Licht, das ein Geist betritt, schaltet um, aber du siehst nicht, ob es brennt. Erst am Ende gehen alle ihre Wege noch einmal, und die Lichter zeigen sich. Je weniger Schritte du brauchst, desto mehr Monde gibt es, bis zu drei für den kürzesten Weg; wie kurz er ist, verrät der Raum nicht. Für das Testlabor zählt aber nur, dass du überhaupt eine Lösung findest.</p>
     </div>
     <div class="guide" id="guide-list"></div>
   </section>

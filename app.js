@@ -13,7 +13,9 @@
   const rooms = new Map(), lessons = new Map();
 
   // MARK: Storage: per room id {mapHash, seconds, attempts, solvedAt, firstSteps, bestSteps,
-  // interesting}, as LabStore.Record; plus the tester's name.
+  // interesting, rating}, as LabStore.Record; plus the tester's name. `rating` is 1 to 5 stars
+  // or null while unrated (since 2026-11-13); `interesting` is the former mark, kept but no
+  // longer shown.
 
   let store = { name: "", guideSeen: false, records: {} };
   function load() {
@@ -34,8 +36,41 @@
     return r && r.mapHash === room.hash ? r : null;
   }
   function ensure(room) {
-    if (!record(room)) store.records[room.id] = { mapHash: room.hash, seconds: 0, attempts: 0, solvedAt: null, firstSteps: null, bestSteps: null, interesting: false };
+    if (!record(room)) store.records[room.id] = { mapHash: room.hash, seconds: 0, attempts: 0, solvedAt: null, firstSteps: null, bestSteps: null, interesting: false, rating: null };
     return store.records[room.id];
+  }
+  // A record may exist for the stars alone; the room counts as played once time ran.
+  const played = r => !!(r && (r.seconds > 0 || r.attempts > 0 || r.solvedAt));
+  const isRating = v => Number.isInteger(v) && v >= 1 && v <= 5;
+
+  // MARK: Stars: 1 to 5, any room, solved or not; the star already set clears the rating.
+
+  function starsPicker(room) {
+    const r = record(room), rating = r && isRating(r.rating) ? r.rating : 0;
+    let html = `<div class="stars" role="group" aria-label="Bewertung">`;
+    for (let n = 1; n <= 5; n++) {
+      html += `<button type="button" data-n="${n}" aria-pressed="${n <= rating}" aria-label="${n} von 5 Sternen">${n <= rating ? "★" : "☆"}</button>`;
+    }
+    html += `</div><p class="small muted stars-hint">${rating ? "Tipp denselben Stern noch einmal, um die Bewertung zu löschen." : "Wie findest du den Raum? Schwierigkeit und Spaß zusammen."}</p>`;
+    return html;
+  }
+  // Wires the picker inside `el`; `changed` runs after every change.
+  function wireStars(el, room, changed) {
+    for (const b of el.querySelectorAll(".stars button")) {
+      b.onclick = () => {
+        const r = ensure(room), n = Number(b.dataset.n);
+        r.rating = r.rating === n ? null : n;
+        save();
+        const wrap = b.closest(".stars-wrap");
+        wrap.innerHTML = starsPicker(room);
+        wireStars(wrap, room, changed);
+        if (changed) changed();
+      };
+    }
+  }
+  function starsShown(r) {
+    const rating = r && isRating(r.rating) ? r.rating : 0;
+    return "★".repeat(rating) + "☆".repeat(5 - rating);
   }
 
   // MARK: The clock of the room on screen
@@ -228,8 +263,10 @@
       let text;
       if (s.active === null && !s.isFinished && s.steps === 0) text = "Tippe einen Geist an";
       else if (s.active === null && !s.isFinished && !this.runner.busy) text = "Wer geht als Nächstes?";
-      else text = `${moonsSVG(s.moons)} <span class="num">${plural(s.steps, "Schritt", "Schritte")}</span>`;
-      $("room-status").innerHTML = `<span class="ghosts" aria-label="${plural(this.puzzle.starts.length - s.out.size, "Geist", "Geister")} übrig">${dots}</span> ${text} <span class="num">· Bestwert ${this.puzzle.best}</span>`;
+      // Steps only: moons going from 3 to 2 would give the best step count away, which is
+      // never shown (2026-11-13); the moons come after the solve.
+      else text = `<span class="num">${plural(s.steps, "Schritt", "Schritte")}</span>`;
+      $("room-status").innerHTML = `<span class="ghosts" aria-label="${plural(this.puzzle.starts.length - s.out.size, "Geist", "Geister")} übrig">${dots}</span> ${text}`;
     }
 
     verdict(solved, steps, firstSolve) {
@@ -237,11 +274,11 @@
       const moons = this.puzzle.best ? R.moons(this.puzzle, steps) : 0;
       let html;
       if (solved) {
-        html = `<span class="eyebrow">Gelöst</span>${moonsSVG(moons)}<p class="num">${plural(steps, "Schritt", "Schritte")} · Bestwert ${this.puzzle.best}</p>`;
+        html = `<span class="eyebrow">Gelöst</span>${moonsSVG(moons)}<p class="num">${plural(steps, "Schritt", "Schritte")}</p>`;
         if (this.room) {
           const r = record(this.room);
           html += `<div class="time num">${time(r.seconds)}</div><p class="small muted">${firstSolve ? "bis zur ersten Lösung" : "Zeit bis zur ersten Lösung"} · ${plural(r.attempts, "Versuch", "Versuche")}</p>`;
-          html += `<button type="button" class="quiet" id="card-star" aria-pressed="${r.interesting}">${r.interesting ? "★ Interessant" : "☆ Als interessant markieren"}</button>`;
+          html += `<div class="stars-wrap" id="card-stars">${starsPicker(this.room)}</div>`;
         }
       } else {
         html = `<span class="eyebrow">Noch nicht</span><h2>Nicht alle Lichter brennen</h2><p class="small muted">Die Uhr läuft weiter, bis du den Raum löst.</p>`;
@@ -253,14 +290,8 @@
       card.innerHTML = html;
       card.hidden = false;
       $("card-again").onclick = () => this.restart();
-      const star = $("card-star");
-      if (star) star.onclick = () => {
-        const r = ensure(this.room);
-        r.interesting = !r.interesting;
-        save();
-        star.setAttribute("aria-pressed", r.interesting);
-        star.textContent = r.interesting ? "★ Interessant" : "☆ Als interessant markieren";
-      };
+      const stars = $("card-stars");
+      if (stars) wireStars(stars, this.room);
     }
   }
 
@@ -423,29 +454,44 @@
     $("room-list").innerHTML = list.map(l => {
       const r = record(l), p = R.parse(l);
       let side = `<span class="big muted">–</span>`;
-      if (r) {
+      if (played(r)) {
         const tries = plural(r.attempts, "Versuch", "Versuche");
-        side = `<span class="big">${time(r.seconds)}</span><span class="muted">${r.solvedAt ? `${tries} · ${plural(r.firstSteps, "Schritt", "Schritte")}${r.bestSteps === l.best ? " ✓" : ""}` : `offen · ${tries}`}</span>`;
+        side = `<span class="big">${time(r.seconds)}</span><span class="muted">${r.solvedAt ? `${tries} · ${plural(r.firstSteps, "Schritt", "Schritte")} ${Number.isInteger(r.bestSteps) ? moonsSVG(R.moons(p, r.bestSteps)) : ""}` : `offen · ${tries}`}</span>`;
       }
       return `<li class="room ${r && r.solvedAt ? "solved" : ""}">
         <a class="item" href="#room-${l.chapter}-${l.number}">
-          <span class="main"><span class="room-id">${l.id}</span><span class="sub">${plural(p.starts.length, "Geist", "Geister")} · ${plural(p.lights.length, "Licht", "Lichter")} · Bestwert ${l.best}</span></span>
+          <span class="main"><span class="room-id">${l.id}</span><span class="sub">${plural(p.starts.length, "Geist", "Geister")} · ${plural(p.lights.length, "Licht", "Lichter")}</span></span>
           <span class="side num">${side}</span>
         </a>
-        <button type="button" class="star" data-id="${l.id}" aria-pressed="${!!(r && r.interesting)}" aria-label="Als interessant markieren">${r && r.interesting ? "★" : "☆"}</button>
+        <button type="button" class="star${r && isRating(r.rating) ? " rated" : ""}" data-id="${l.id}" aria-label="${r && isRating(r.rating) ? `${r.rating} von 5 Sternen, ändern` : "Bewerten"}">${starsShown(r)}</button>
       </li>`;
     }).join("");
     for (const b of $("room-list").querySelectorAll(".star")) {
-      b.onclick = () => {
-        const room = rooms.get(b.dataset.id), r = ensure(room);
-        r.interesting = !r.interesting;
-        save();
-        b.setAttribute("aria-pressed", r.interesting);
-        b.textContent = r.interesting ? "★" : "☆";
-      };
+      b.onclick = () => openRating(rooms.get(b.dataset.id), () => {
+        const r = record(rooms.get(b.dataset.id));
+        b.textContent = starsShown(r);
+        b.classList.toggle("rated", !!(r && isRating(r.rating)));
+        b.setAttribute("aria-label", r && isRating(r.rating) ? `${r.rating} von 5 Sternen, ändern` : "Bewerten");
+      });
     }
     return true;
   }
+
+  // The stars of a room, set from the list.
+  function openRating(room, changed) {
+    const dialog = $("rate-dialog"), r = record(room);
+    $("rate-title").textContent = `Raum ${room.id} bewerten`;
+    $("rate-status").textContent = !played(r) ? "noch nicht gespielt"
+      : r.solvedAt ? `gelöst in ${time(r.seconds)}` : `offen nach ${time(r.seconds)}`;
+    const wrap = $("rate-stars");
+    wrap.innerHTML = starsPicker(room);
+    wireStars(wrap, room, changed);
+    if (dialog.showModal) dialog.showModal(); else dialog.setAttribute("open", "");
+  }
+  $("rate-done").addEventListener("click", () => {
+    const dialog = $("rate-dialog");
+    if (dialog.close) dialog.close(); else dialog.removeAttribute("open");
+  });
 
   // MARK: Results
 
@@ -453,7 +499,7 @@
     const records = {};
     for (const [id, r] of Object.entries(store.records)) {
       const room = rooms.get(id);
-      if (!room || r.mapHash !== room.hash || (!r.attempts && !r.seconds && !r.interesting)) continue;
+      if (!room || r.mapHash !== room.hash || (!r.attempts && !r.seconds && !r.interesting && !isRating(r.rating))) continue;
       records[id] = { ...r, seconds: Math.round(r.seconds * 10) / 10 };
     }
     return JSON.stringify({
@@ -508,16 +554,19 @@
       mapHash: room.hash, seconds: r.seconds, attempts: r.attempts, solvedAt: solved ? r.solvedAt : null,
       firstSteps: solved && isCount(r.firstSteps) ? r.firstSteps : null,
       bestSteps: solved && isCount(r.bestSteps) ? r.bestSteps : null, interesting: r.interesting === true,
+      rating: isRating(r.rating) ? r.rating : null,
     };
   }
   // The further of two records of a room: solved beats open, then the earlier solve, then
-  // more time spent; the star and the fewest steps survive either way.
+  // more time spent; the old star, the rating (this device's first) and the fewest steps
+  // survive either way.
   function merged(a, b) {
     if (!a) return b;
     const keep = a.solvedAt && b.solvedAt ? (Date.parse(b.solvedAt) < Date.parse(a.solvedAt) ? b : a)
       : a.solvedAt ? a : b.solvedAt ? b : (b.seconds > a.seconds ? b : a);
     const steps = [a.bestSteps, b.bestSteps].filter(isCount);
-    return { ...keep, bestSteps: steps.length ? Math.min(...steps) : null, interesting: a.interesting || b.interesting };
+    return { ...keep, bestSteps: steps.length ? Math.min(...steps) : null, interesting: a.interesting || b.interesting,
+      rating: isRating(a.rating) ? a.rating : isRating(b.rating) ? b.rating : null };
   }
   function restore(text) {
     let input;
