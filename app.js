@@ -460,7 +460,7 @@
       }
       return `<li class="room ${r && r.solvedAt ? "solved" : ""}">
         <a class="item" href="#room-${l.chapter}-${l.number}">
-          <span class="main"><span class="room-id">${l.id}</span><span class="sub">${plural(p.starts.length, "Geist", "Geister")} · ${plural(p.lights.length, "Licht", "Lichter")}</span></span>
+          <span class="main"><span class="room-id">${l.id}</span><span class="sub">${plural(p.starts.length, "Geist", "Geister")} · ${plural(p.lights.length, "Licht", "Lichter")}</span>${l.built ? `<span class="sub built">${builtText(l.built)}</span>` : ""}</span>
           <span class="side num">${side}</span>
         </a>
         <button type="button" class="star${r && isRating(r.rating) ? " rated" : ""}" data-id="${l.id}" aria-label="${r && isRating(r.rating) ? `${r.rating} von 5 Sternen, ändern` : "Bewerten"}">${starsShown(r)}</button>
@@ -475,6 +475,13 @@
       });
     }
     return true;
+  }
+
+  // When a room was built ("YYYY-MM-DD" in levels.json), in the page's language; rooms without
+  // a known date show none.
+  function builtText(day) {
+    const date = new Date(day + "T12:00:00Z");
+    return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(document.documentElement.lang || undefined, { day: "numeric", month: "short", year: "numeric" });
   }
 
   // The stars of a room, set from the list.
