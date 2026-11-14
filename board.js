@@ -78,6 +78,16 @@
         if (t < 1) for (const c of view.lit) this.glow(this.px(R.cx(c)), this.py(R.cy(c)), s * 1.3 * (0.6 + t * 0.5), GOLD, 0.95 * (1 - t));
       }
       for (const w of view.waiting || []) this.drawGhost(R.cx(p.starts[w.ghost]), R.cy(p.starts[w.ghost]), w.ghost, w.alpha, w.beckon ? 1 : 0.8, now, w.beckon);
+      // The Lab's hint: a white ring on the first ghost's start that blinks six times.
+      if (view.hint && !view.swirl && p.starts[view.hint.ghost] !== undefined) {
+        const on = Math.floor((now - view.hint.at) / 250) % 2 === 0;
+        if (on) {
+          const c = p.starts[view.hint.ghost], x = this.px(R.cx(c)), y = this.py(R.cy(c));
+          this.glow(x, y, s * 0.8, GHOST[view.hint.ghost % 4], 0.5);
+          ctx.save(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(x, y, s * 0.52, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+        }
+      }
       if (view.walker) {
         const w = view.walker;
         if (w.halo) this.glow(this.px(w.x), this.py(w.y), s * 0.95, GHOST[w.ghost % 4], 0.35 * w.alpha);

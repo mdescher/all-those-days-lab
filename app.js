@@ -13,7 +13,8 @@
   const rooms = new Map(), lessons = new Map();
 
   // MARK: Storage: per room id {mapHash, seconds, attempts, solvedAt, firstSteps, bestSteps,
-  // interesting, rating}, as LabStore.Record; plus the tester's name. `rating` is 1 to 5 stars
+  // interesting, rating, hintAt}, as LabStore.Record (hintAt: the room's clock when the hint was
+  // first shown, since 2026-11-14); plus the tester's name. `rating` is 1 to 5 stars
   // or null while unrated (since 2026-11-13); `interesting` is the former mark, kept but no
   // longer shown.
 
@@ -206,7 +207,16 @@
 
     paint(now) {
       this.board.resize();
-      this.board.draw(this.runner.view(now), now);
+      const view = this.runner.view(now);
+      if (this.hint && now < this.hint.at + 3000) view.hint = this.hint;
+      this.board.draw(view, now);
+    }
+
+    // The hint: the first ghost of the stored solution blinks for three seconds.
+    showHint() {
+      if (!this.room || this.room.first === undefined) return;
+      clockInput();
+      this.hint = { ghost: this.room.first, at: performance.now() };
     }
 
     pointer(e) {
@@ -277,7 +287,7 @@
         html = `<span class="eyebrow">Gelöst</span>${moonsSVG(moons)}<p class="num">${plural(steps, "Schritt", "Schritte")}</p>`;
         if (this.room) {
           const r = record(this.room);
-          html += `<div class="time num">${time(r.seconds)}</div><p class="small muted">${firstSolve ? "bis zur ersten Lösung" : "Zeit bis zur ersten Lösung"} · ${plural(r.attempts, "Versuch", "Versuche")}</p>`;
+          html += `<div class="time num">${time(r.seconds)}</div><p class="small muted">${firstSolve ? "bis zur ersten Lösung" : "Zeit bis zur ersten Lösung"} · ${plural(r.attempts, "Versuch", "Versuche")}${typeof r.hintAt === "number" ? ` · Hinweis nach ${time(r.hintAt)}` : ""}</p>`;
           html += `<div class="stars-wrap" id="card-stars">${starsPicker(this.room)}</div>`;
         }
       } else {
@@ -303,7 +313,23 @@
     el.textContent = `${time(elapsed(player.room))} · ${r ? r.attempts : 0}`;
     el.classList.toggle("done", !!(r && r.solvedAt));
     el.title = "Zeit bis zur ersten Lösung · Versuche";
+    const hint = $("room-hint");
+    hint.hidden = !!(r && r.solvedAt) || player.room.first === undefined;
+    hint.classList.toggle("used", !!(r && typeof r.hintAt === "number"));
   }
+
+  // The hint button: the first time it asks, and the clock's time is noted in the record.
+  $("room-hint").addEventListener("click", () => {
+    if (!player || !player.room) return;
+    const r = record(player.room);
+    if (!(r && typeof r.hintAt === "number")) {
+      if (!window.confirm("Hinweis zeigen? Der Geist, der als Erster gehen muss, blinkt. Das Lab vermerkt, dass und wann du den Hinweis genommen hast.")) return;
+      ensure(player.room).hintAt = elapsed(player.room);
+      save();
+    }
+    player.showHint();
+    showClock();
+  });
 
   function nextRoom(room) {
     const list = data.levels.filter(l => l.chapter === room.chapter);
@@ -456,7 +482,7 @@
       let side = `<span class="big muted">–</span>`;
       if (played(r)) {
         const tries = plural(r.attempts, "Versuch", "Versuche");
-        side = `<span class="big">${time(r.seconds)}</span><span class="muted">${r.solvedAt ? `${tries} · ${plural(r.firstSteps, "Schritt", "Schritte")} ${Number.isInteger(r.bestSteps) ? moonsSVG(R.moons(p, r.bestSteps)) : ""}` : `offen · ${tries}`}</span>`;
+        side = `<span class="big">${time(r.seconds)}</span><span class="muted">${r.solvedAt ? `${tries} · ${plural(r.firstSteps, "Schritt", "Schritte")} ${Number.isInteger(r.bestSteps) ? moonsSVG(R.moons(p, r.bestSteps)) : ""}` : `offen · ${tries}`}${typeof r.hintAt === "number" ? " · 💡" : ""}</span>`;
       }
       return `<li class="room ${r && r.solvedAt ? "solved" : ""}">
         <a class="item" href="#room-${l.chapter}-${l.number}">
@@ -561,7 +587,7 @@
       mapHash: room.hash, seconds: r.seconds, attempts: r.attempts, solvedAt: solved ? r.solvedAt : null,
       firstSteps: solved && isCount(r.firstSteps) ? r.firstSteps : null,
       bestSteps: solved && isCount(r.bestSteps) ? r.bestSteps : null, interesting: r.interesting === true,
-      rating: isRating(r.rating) ? r.rating : null,
+      rating: isRating(r.rating) ? r.rating : null, hintAt: isCount(r.hintAt) ? r.hintAt : null,
     };
   }
   // The further of two records of a room: solved beats open, then the earlier solve, then
@@ -573,7 +599,8 @@
       : a.solvedAt ? a : b.solvedAt ? b : (b.seconds > a.seconds ? b : a);
     const steps = [a.bestSteps, b.bestSteps].filter(isCount);
     return { ...keep, bestSteps: steps.length ? Math.min(...steps) : null, interesting: a.interesting || b.interesting,
-      rating: isRating(a.rating) ? a.rating : isRating(b.rating) ? b.rating : null };
+      rating: isRating(a.rating) ? a.rating : isRating(b.rating) ? b.rating : null,
+      hintAt: [a.hintAt, b.hintAt].filter(isCount).length ? Math.min(...[a.hintAt, b.hintAt].filter(isCount)) : null };
   }
   function restore(text) {
     let input;

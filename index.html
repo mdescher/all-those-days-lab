@@ -96,6 +96,9 @@
   .playbar h2 { font-size: 24px; text-align: center; }
   .clock { justify-self: end; font-size: 13px; font-weight: 800; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); }
   .clock.done { color: var(--gold); }
+  .clockbar { justify-self: end; display: inline-flex; gap: 6px; align-items: center; }
+  .hint { background: rgba(255,255,255,0.08); border-radius: 999px; padding: 3px 9px; font-size: 13px; line-height: 1.4; filter: grayscale(1); opacity: 0.8; }
+  .hint.used { filter: none; opacity: 1; }
   .status { display: flex; justify-content: center; align-items: center; gap: 12px; min-height: 24px; font-size: 14px; font-weight: 700; color: var(--muted); }
   .ghosts { display: inline-flex; gap: 5px; }
   .ghosts i { width: 12px; height: 14px; border-radius: 6px 6px 3px 3px; display: block; }
@@ -180,7 +183,7 @@
     <div class="playbar">
       <a class="back" id="room-back" href="#">‹ Zurück</a>
       <h2 id="room-title"></h2>
-      <span class="clock num" id="room-clock" aria-label="Zeit und Versuche"></span>
+      <span class="clockbar"><span class="clock num" id="room-clock" aria-label="Zeit und Versuche"></span><button type="button" class="hint" id="room-hint" aria-label="Hinweis" hidden>💡</button></span>
     </div>
     <div class="status" id="room-status" aria-live="polite"></div>
     <div class="stage" id="room-stage">
